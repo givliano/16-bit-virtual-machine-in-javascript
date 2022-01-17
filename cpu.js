@@ -47,6 +47,52 @@ class CPU {
     }
     return this.register.setUint16(this.registerMap(name), value);
   }
+
+  // get the instruction that is being pointed to by the ip register
+  fetch() {
+    const nextInstructionAddress = this.getRegister('ip');
+    const instruction = this.memory.getUint8(nextInstructionAddress); // get 8 bit value
+    this.setRegister('ip', nextInstructionAddress + 1);
+    return instruction;
+  }
+
+  fetch16() {
+    const nextInstructionAddress = this.getRegister('ip');
+    const instruction = this.memory.getUint16(nextInstructionAddress); // get 16 bit value
+    this.setRegister('ip', nextInstructionAddress + 2);
+    return instruction;
+  }
+
+  execute(instruction) {
+    switch(instruction) {
+      // move literal into r1 register
+      case 0x10: {
+        const literal = this.fetch16();
+        this.setRegister('r1', literal);
+        return;
+      }
+      // move literal into r2 register
+      case 0x11: {
+        const literal = this.fetch16();
+        this.setRegister('r2', literal);
+        return;
+      }
+      // add register to register
+      case 0x12: {
+        const r1 = this.fetch();
+        const r2 = this.fetch();
+        const registerValue1 = this.register.getUint16(r1 * 2);
+        const registerValue2 = this.register.getUint16(r2 * 2);
+        this.setRegister('acc', registerValue1 + registerValue2);
+        return;
+      }
+    }
+  }
+
+  step() {
+    const instruction = this.fetch();
+    return this.execute(instruction);
+  }
 }
 
 module.exports = CPU;

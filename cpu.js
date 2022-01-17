@@ -1,4 +1,5 @@
-const createMemory = require('./crete-memory');
+const createMemory = require('./create-memory');
+const instructions = require('instructions');
 
 // this class is the heart of the VM
 // 16 bits CPU, so each register will be 16 bits wide
@@ -66,19 +67,19 @@ class CPU {
   execute(instruction) {
     switch(instruction) {
       // move literal into r1 register
-      case 0x10: {
+      case instructions.MOV_LIT_R1: {
         const literal = this.fetch16();
         this.setRegister('r1', literal);
         return;
       }
       // move literal into r2 register
-      case 0x11: {
+      case instructions.MOV_LIT_R2: {
         const literal = this.fetch16();
         this.setRegister('r2', literal);
         return;
       }
       // add register to register
-      case 0x12: {
+      case instructions.ADD_REG_REG: {
         const r1 = this.fetch();
         const r2 = this.fetch();
         const registerValue1 = this.register.getUint16(r1 * 2);

@@ -1,5 +1,5 @@
 const createMemory = require('./create-memory');
-const instructions = require('instructions');
+const instructions = require('./instructions');
 
 // this class is the heart of the VM
 // 16 bits CPU, so each register will be 16 bits wide
@@ -35,7 +35,7 @@ class CPU {
 
   debug() {
     this.registerNames.forEach(name => {
-      console.log(`${name}: 0x${this.getRegister(name).toString(16).padStart(4, '0')}`)
+      // console.log(`${name}: 0x${this.getRegister(name).toString(16).padStart(4, '0')}`)
     });
     console.log();
   }
@@ -53,7 +53,7 @@ class CPU {
     if (!(name in this.registerMap)) {
       throw new Error(`setRegister: No such register ${name}`);
     }
-    return this.register.setUint16(this.registerMap(name), value);
+    return this.registers.setUint16(this.registerMap[name], value);
   }
 
   // get the instruction that is being pointed to by the ip register
@@ -89,8 +89,8 @@ class CPU {
       case instructions.ADD_REG_REG: {
         const r1 = this.fetch();
         const r2 = this.fetch();
-        const registerValue1 = this.register.getUint16(r1 * 2);
-        const registerValue2 = this.register.getUint16(r2 * 2);
+        const registerValue1 = this.registers.getUint16(r1 * 2);
+        const registerValue2 = this.registers.getUint16(r2 * 2);
         this.setRegister('acc', registerValue1 + registerValue2);
         return;
       }

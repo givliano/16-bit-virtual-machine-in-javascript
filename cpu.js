@@ -35,7 +35,7 @@ class CPU {
 
   debug() {
     this.registerNames.forEach(name => {
-      // console.log(`${name}: 0x${this.getRegister(name).toString(16).padStart(4, '0')}`)
+      console.log(`${name}:  0x${this.getRegister(name).toString(16).padStart(4, '0')}`)
     });
     console.log();
   }
@@ -57,6 +57,7 @@ class CPU {
   }
 
   // get the instruction that is being pointed to by the ip register
+  // in the memory of the CPU (not to be confused by the register)
   fetch() {
     const nextInstructionAddress = this.getRegister('ip');
     const instruction = this.memory.getUint8(nextInstructionAddress); // get 8 bit value

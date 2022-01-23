@@ -95,6 +95,13 @@ class CPU {
     this.setRegister('sp', spAddress - 2)
   }
 
+  // to get the last value we must increment the stack pointer since it was decreased after push
+  pop() {
+     const nextSpAddress = this.getRegister('sp' ) + 2;
+     this.setRegister('sp', nextSpAddress);
+     return this.memory.getUint16(nextSpAddress);
+  }
+
   fetchRegisterIndex() {
     return (this.fetch() % this.registerNames.length) * 2;
   }
@@ -140,7 +147,7 @@ class CPU {
       case instructions.ADD_REG_REG: {
         const r1 = this.fetch();
         const r2 = this.fetch();
-        const registerValue1 = this.registers.getUint16(r1 * 2);
+        const registerValue1 = this.fetchRegisterIndex();
         const registerValue2 = this.registers.getUint16(r2 * 2);
         this.setRegister('acc', registerValue1 + registerValue2);
         return;
@@ -155,6 +162,28 @@ class CPU {
           this.setRegister('ip', address);
         }
 
+        return;
+      }
+
+      // push literal
+      case instructions.PSH_LIT: {
+        const value = this.fetch16();
+        this.push(value);
+        return;
+      }
+
+      // push register
+      case instructions.PSH_REG: {
+        const registerIndex = this.fetchRegisterIndex();
+        this.push(this.registers.getUint16(registerIndex));
+        return;
+      }
+
+      // pop
+      case instructions.POP: {
+        const registerIndex = this.fetchRegisterIndex();
+        const value = this.pop();
+        this.registers.setUint16(registerIndex, value);
         return;
       }
     }

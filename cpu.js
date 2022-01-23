@@ -34,7 +34,8 @@ class CPU {
     }, {}); // initial value
 
      // we need two bytes to store a 16bit value, so we need this one
-     // and the second one because we are dealing with a zero based index
+     // and the second one because we are dealing with a zero based index.
+     // so it starts in the end (0xffff) and you can store 2 bytes
      this.setRegister('sp', memory.byteLength - 1 - 1)
   }
 

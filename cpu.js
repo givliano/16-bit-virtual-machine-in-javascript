@@ -15,7 +15,9 @@ class CPU {
       'acc',
       // general purpose registers
       'r1', 'r2', 'r3', 'r4',
-      'r5', 'r6', 'r7', 'r8'
+      'r5', 'r6', 'r7', 'r8',
+      // stack pointer and frame pointer
+      'sp', 'fp'
     ];
 
     // create memory with length of registerNamers multiplied by 2 (2 bytes) for the registers
@@ -31,6 +33,9 @@ class CPU {
       return map;
     }, {}); // initial value
 
+     // we need two bytes to store a 16bit value, so we need this one
+     // and the second one because we are dealing with a zero based index
+     this.setRegister('sp', memory.byteLength - 1 - 1)
   }
 
   debug() {

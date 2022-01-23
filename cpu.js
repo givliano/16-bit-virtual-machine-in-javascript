@@ -87,20 +87,32 @@ class CPU {
     return instruction;
   }
 
+  // takes a value and handles the mechanical parts of the stack
+  push(value) {
+    const spAddress = this.getRegister('sp');
+    this.memory.setUint16(spAddress, value);
+    // we need to decrement it by two to go up the stack
+    this.setRegister('sp', spAddress - 2)
+  }
+
+  fetchRegisterIndex() {
+    return (this.fetch() % this.registerNames.length) * 2;
+  }
+
   execute(instruction) {
     switch(instruction) {
       // move literal into register
       case instructions.MOV_LIT_REG: {
         const literal = this.fetch16();
-        const register = (this.fetch() % this.registerNames.length) * 2;
+        const register = this.fetchRegisterIndex();
         this.registers.setUint16(register, literal);
         return;
       }
 
       // move register to register
       case instructions.MOV_REG_REG: {
-        const registerFrom = (this.fetch() % this.registerNames.length) * 2;
-        const registerTo = (this.fetch() % this.registerNames.length) * 2;
+        const registerFrom = this.fetchRegisterIndex();
+        const registerTo = this.fetchRegisterIndex();
         const value = this.registers.getUint16(registerFrom);
         this.registers.setUint16(registerTo, value);
         return;
@@ -108,7 +120,7 @@ class CPU {
 
       // move register to memory
       case instructions.MOV_REG_MEM: {
-        const registerFrom = (this.fetch() % this.registerNames.length) * 2;
+        const registerFrom = this.fetchRegisterIndex();
         const address = this.fetch16();
         const value = this.registers.getUint16(registerFrom);
         this.memory.setUint16(address, value);
@@ -118,7 +130,7 @@ class CPU {
       // move memory to register
       case  instructions.MOV_MEM_REG: {
         const address = this.fetch16();
-        const registerTo = (this.fetch() % this.registerNames.length) * 2
+        const registerTo = this.fetchRegisterIndex();
         const value = this.memory.getUint16(address);
         this.registers.setUint16(registerTo, value);
         return;

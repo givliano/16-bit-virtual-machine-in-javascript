@@ -37,6 +37,8 @@ class CPU {
      // and the second one because we are dealing with a zero based index.
      // so it starts in the end (0xffff) and you can store 2 bytes
      this.setRegister('sp', memory.byteLength - 1 - 1)
+
+     this.stackFrameSize = 0;
   }
 
   debug() {
@@ -46,10 +48,11 @@ class CPU {
     console.log();
   }
 
-  viewMemoryAt(address) {
+  // argument n how many bytes we see further back in the stack
+  viewMemoryAt(address, n = 8) {
     // format is: address: byte found at the address, followedby 7 bytes that come after that
-    // 0x0F01: 0x04 0x05 0A3 0xFE 0x13 0x0D 0x44 0x0F
-    const nextEightBytes = Array.from({ length: 8 }, (_, i) =>
+    // 0x0F01: 0x04 0x05 0A3 0xFE 0x13 0x0D 0x44 0x0F ...
+    const nextNBytes = Array.from({ length: n }, (_, i) =>
       this.memory.getUint8(address + i)
     ).map(v => `0x${v.toString(16).padStart(2, '0')}`)
 
@@ -76,15 +79,29 @@ class CPU {
   // in the memory of the CPU (not to be confused by the register)
   fetch() {
     const nextInstructionAddress = this.getRegister('ip');
+    console.log(`IN FETCH`);
+    console.log(`next instruction address: ${nextInstructionAddress}`);
     const instruction = this.memory.getUint8(nextInstructionAddress); // get 8 bit value
+    console.log(`memory`);
+    console.log(this.memory);
+    console.log(`instruction: ${instruction}`);
     this.setRegister('ip', nextInstructionAddress + 1);
+    console.log('registers');
+    console.log(this.registers);
     return instruction;
   }
 
   fetch16() {
     const nextInstructionAddress = this.getRegister('ip');
+    console.log(`IN FETCH 16`);
+    console.log(`next instruction address: ${nextInstructionAddress}`);
     const instruction = this.memory.getUint16(nextInstructionAddress); // get 16 bit value
+    console.log(`memory`);
+    console.log(this.memory);
+    console.log(`instruction: ${instruction}`);
     this.setRegister('ip', nextInstructionAddress + 2);
+    console.log('registers');
+    console.log(this.registers);
     return instruction;
   }
 
@@ -93,14 +110,60 @@ class CPU {
     const spAddress = this.getRegister('sp');
     this.memory.setUint16(spAddress, value);
     // we need to decrement it by two to go up the stack
-    this.setRegister('sp', spAddress - 2)
+    this.setRegister('sp', spAddress - 2);
+    this.stackFrameSize += 2;
   }
 
   // to get the last value we must increment the stack pointer since it was decreased after push
   pop() {
      const nextSpAddress = this.getRegister('sp' ) + 2;
      this.setRegister('sp', nextSpAddress);
+     this.stackFrameSize -= 2;
      return this.memory.getUint16(nextSpAddress);
+  }
+
+  pushState() {
+    this.push(this.getRegister('r1'));
+    this.push(this.getRegister('r2'));
+    this.push(this.getRegister('r3'));
+    this.push(this.getRegister('r4'));
+    this.push(this.getRegister('r5'));
+    this.push(this.getRegister('r6'));
+    this.push(this.getRegister('r7'));
+    this.push(this.getRegister('r8'));
+    this.push(this.getRegister('ip'));
+    // this operation also takes up stack space
+    this.push(this.stackFrameSize + 2);
+    this.setRegister('fp', this.getRegister('sp'));
+    this.stackFrameSize = 0;
+  }
+
+  popState() {
+    // get the address inside the frame pointer
+    const framePointerAddress = this.getRegister('fp');
+    this.setRegister('sp', framePointerAddress);
+
+    this.stackFrameSize = pop();
+    const stackFrameSize = this.stackFrameSize;
+
+    this.setRegister('ip', this.pop());
+    this.setRegister('r8', this.pop());
+    this.setRegister('r7', this.pop());
+    this.setRegister('r6', this.pop());
+    this.setRegister('r5', this.pop());
+    this.setRegister('r4', this.pop());
+    this.setRegister('r3', this.pop());
+    this.setRegister('r2', this.pop());
+    this.setRegister('r1', this.pop());
+
+    // gets the stack size
+    // minute 13 in class 4 for future ref
+    const nArgs = this.pop();
+    for (let i = 0; i < nArgs; i++) {
+      this.pop();
+    }
+
+    this.setRegister('fp', framePointerAddress + stackFrameSize);
   }
 
   fetchRegisterIndex() {
@@ -166,25 +229,50 @@ class CPU {
         return;
       }
 
-      // push literal
+      // push literal into stack
       case instructions.PSH_LIT: {
         const value = this.fetch16();
         this.push(value);
         return;
       }
 
-      // push register
+      // push register into stack
       case instructions.PSH_REG: {
         const registerIndex = this.fetchRegisterIndex();
         this.push(this.registers.getUint16(registerIndex));
         return;
       }
 
-      // pop
+      // pop from the stack
       case instructions.POP: {
         const registerIndex = this.fetchRegisterIndex();
         const value = this.pop();
         this.registers.setUint16(registerIndex, value);
+        return;
+      }
+
+      // call a literal
+      case instructions.CAL_LIT: {
+        const address = this.fetch16();
+        console.log(`cal_lit address: ${address}`)
+        this.pushState();
+        this.setRegister('ip', address);
+      }
+
+      // call a register
+      case instructions.CAL_REG: {
+        // fetch the register index that holds the address
+        const registerIndex = this.fetchRegisterIndex();
+        console.log(`cal_reg register index: ${registerIndex}`);
+        const address = this.registers.getUint16(registerIndex);
+        console.log(`cal_reg address: ${address}`);
+        this.pushState();
+        this.setRegister('ip', address);
+      }
+
+      // return from subroutine
+      case instructions.RET :{
+        this.popState();
         return;
       }
     }

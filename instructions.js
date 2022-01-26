@@ -9,6 +9,9 @@ const JMP_NOT_EQ  = 0x15;
 const PSH_LIT     = 0x16;
 const PSH_REG     = 0x17;
 const POP         = 0x1A;
+const CAL_LIT     = 0x1B; // literal value to specify where in memory the subroutine is
+const CAL_REG     = 0x1C; // gets the subroutine address from a register
+const RET         = 0x1D;
 
 module.exports = {
   MOV_LIT_REG,
@@ -19,5 +22,8 @@ module.exports = {
   JMP_NOT_EQ,
   PSH_LIT,
   PSH_REG,
-  POP
+  POP,
+  CAL_LIT,
+  CAL_REG,
+  RET
 };

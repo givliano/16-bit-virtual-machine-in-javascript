@@ -12,6 +12,7 @@ const POP         = 0x1A;
 const CAL_LIT     = 0x1B; // literal value to specify where in memory the subroutine is
 const CAL_REG     = 0x1C; // gets the subroutine address from a register
 const RET         = 0x1D;
+const HLT         = 0xFF;
 
 module.exports = {
   MOV_LIT_REG,
@@ -25,5 +26,6 @@ module.exports = {
   POP,
   CAL_LIT,
   CAL_REG,
-  RET
+  RET,
+  HLT
 };

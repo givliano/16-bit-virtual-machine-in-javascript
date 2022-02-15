@@ -143,7 +143,7 @@ class CPU {
     const framePointerAddress = this.getRegister('fp');
     this.setRegister('sp', framePointerAddress);
 
-    this.stackFrameSize = pop();
+    this.stackFrameSize = this.pop();
     const stackFrameSize = this.stackFrameSize;
 
     this.setRegister('ip', this.pop());
@@ -209,10 +209,10 @@ class CPU {
 
       // add register to register
       case instructions.ADD_REG_REG: {
-        const r1 = this.fetch();
-        const r2 = this.fetch();
-        const registerValue1 = this.fetchRegisterIndex();
-        const registerValue2 = this.registers.getUint16(r2 * 2);
+        const r1 = this.fetchRegisterIndex();
+        const r2 = this.fetchRegisterIndex();
+        const registerValue1 = this.registers.getUint16(r1);
+        const registerValue2 = this.register.getUint16(r2);
         this.setRegister('acc', registerValue1 + registerValue2);
         return;
       }

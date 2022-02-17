@@ -24,6 +24,8 @@ class MemoryMapper {
     if (!region) {
       throw new Error (`No memory region found for address ${address}`);
     }
+
+    return region;
   }
 
   getUint16(address) {

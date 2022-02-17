@@ -36,7 +36,8 @@ class CPU {
      // we need two bytes to store a 16bit value, so we need this one
      // and the second one because we are dealing with a zero based index.
      // so it starts in the end (0xffff) and you can store 2 bytes
-     this.setRegister('sp', memory.byteLength - 1 - 1)
+     this.setRegister('sp', 0xffff - 1);
+     this.setRegister('fp', 0xffff - 1);
 
      this.stackFrameSize = 0;
   }
@@ -56,7 +57,7 @@ class CPU {
       this.memory.getUint8(address + i)
     ).map(v => `0x${v.toString(16).padStart(2, '0')}`)
 
-    console.log(`0x${address.toString(16).padStart(4, '0')}: ${nextEightBytes.join(' ')}`);
+    console.log(`0x${address.toString(16).padStart(4, '0')}: ${nextNBytes.join(' ')}`);
   }
 
   getRegister(name) {
@@ -79,29 +80,15 @@ class CPU {
   // in the memory of the CPU (not to be confused by the register)
   fetch() {
     const nextInstructionAddress = this.getRegister('ip');
-    console.log(`IN FETCH`);
-    console.log(`next instruction address: ${nextInstructionAddress}`);
     const instruction = this.memory.getUint8(nextInstructionAddress); // get 8 bit value
-    console.log(`memory`);
-    console.log(this.memory);
-    console.log(`instruction: ${instruction}`);
     this.setRegister('ip', nextInstructionAddress + 1);
-    console.log('registers');
-    console.log(this.registers);
     return instruction;
   }
 
   fetch16() {
     const nextInstructionAddress = this.getRegister('ip');
-    console.log(`IN FETCH 16`);
-    console.log(`next instruction address: ${nextInstructionAddress}`);
     const instruction = this.memory.getUint16(nextInstructionAddress); // get 16 bit value
-    console.log(`memory`);
-    console.log(this.memory);
-    console.log(`instruction: ${instruction}`);
     this.setRegister('ip', nextInstructionAddress + 2);
-    console.log('registers');
-    console.log(this.registers);
     return instruction;
   }
 
@@ -275,12 +262,26 @@ class CPU {
         this.popState();
         return;
       }
+
+      // halt all computation
+      case instructions.HLT: {
+        return true;
+      }
     }
   }
 
   step() {
     const instruction = this.fetch();
     return this.execute(instruction);
+  }
+
+  // Recursive call that steps the CPU and uses it's return value to know
+  // wheter or not to halt the machine.
+  run() {
+    const halt = this.step();
+    if (!halt) {
+      setImmediate(() => this.run());
+    }
   }
 }
 

@@ -320,6 +320,142 @@ class CPU {
         return;
       }
 
+      // left shift register by literal (in place) not using the accumulator
+      // shifts all the binary bytes left or right by an amount
+      // values outside a 16 bit value are lost.
+      // everything get multiplied by a power of two
+      // 9 << 2 ===  9 * 2ˆ2
+      case instructions.LSF_REG_LIT: {
+        const r1 = this.fetchRegisterIndex();
+        const literal = this.fetch();
+        const registerValue = this.registers.getUint16(r1);
+        const result = registerValue << literal;
+        this.registers.setUint16(r1, result);
+        return;
+      }
+
+      // left shift register by register (in place);
+      case instructions.LSF_REG_REG: {
+        const r1 = this.fetchRegisterIndex();
+        const r2 = this.fetchRegisterIndex();
+        const registerValue = this.registers.getUint16(r1);
+        const shiftBy = this.register.getUint16(r2);
+        const result = registerValue << shiftBy;
+        this.register.setUint16(r1, result);
+        return;
+      }
+
+      // Right shift register by literal (in place)
+      // right shift is kinda like a divison by a power of two, but it is very lossy
+      // 9 << 2 === 9 / 2ˆ2
+      case instructions.RSF_REG_LIT: {
+        const r1 = this.fetchRegisterIndex();
+        const literal = this.fetch();
+        const registerValue = this.registers.getUint16(r1);
+        const result = registerValue >> literal;
+        this.registers.setUint16(r1, result);
+        return;
+      }
+
+      // left shift register by register (in place);
+      case instructions.RSF_REG_REG: {
+        const r1 = this.fetchRegisterIndex();
+        const r2 = this.fetchRegisterIndex();
+        const registerValue = this.registers.getUint16(r1);
+        const shiftBy = this.register.getUint16(r2);
+        const result = registerValue >> shiftBy;
+        this.register.setUint16(r1, result);
+        return;
+      }
+
+      // And register with literal
+      // takes two binary numbers and produces a new binary number
+      // can be used to remove value by `and` with a set of binary values with 0 for the removal
+      case instructions.AND_REG_LIT: {
+        const r1 = this.fetchRegisterIndex();
+        const literal = this.fetch16();
+        const registerValue = this.register.getUint16(r1);
+
+        const result = registerValue & literal;
+        this.setRegister('acc', result);
+        return;
+      }
+
+      // And register register
+      case instructions.AND_REG_REG: {
+        const r1 = this.fetchRegisterIndex();
+        const r2 = this.fetchRegisterIndex();
+        const registerValue1 = this.register.getUint16(r1);
+        const registerValue2 = this.register.getUint16(r2);
+
+        const result = registerValue1 & registerValue2;
+        this.setRegister('acc', result);
+        return;
+      }
+
+      // Or register with literal
+      // easy to use as a data flag to set `true` values as `false`
+      case instructions.OR_REG_LIT: {
+        const r1 = this.fetchRegisterIndex();
+        const literal = this.fetch16();
+        const registerValue = this.register.getUint16(r1);
+
+        const result = registerValue | literal;
+        this.setRegister('acc', result);
+        return;
+      }
+
+      // Or register register
+      case instructions.OR_REG_REG: {
+        const r1 = this.fetchRegisterIndex();
+        const r2 = this.fetchRegisterIndex();
+        const registerValue1 = this.register.getUint16(r1);
+        const registerValue2 = this.register.getUint16(r2);
+
+        const result = registerValue1 | registerValue2;
+        this.setRegister('acc', result);
+        return;
+      }
+
+      // Xor register with literal (exclusive or)
+      // same as or, but if the two operators are 1, it produces a 0
+      // A ^ B = C
+      // A ^ C = B
+      // B ^ C = A
+      case instructions.XOR_REG_LIT: {
+        const r1 = this.fetchRegisterIndex();
+        const literal = this.fetch16();
+        const registerValue = this.register.getUint16(r1);
+
+        const result = registerValue ^ literal;
+        this.setRegister('acc', result);
+        return;
+      }
+
+      // Xor register register
+      case instructions.XOR_REG_REG: {
+        const r1 = this.fetchRegisterIndex();
+        const r2 = this.fetchRegisterIndex();
+        const registerValue1 = this.register.getUint16(r1);
+        const registerValue2 = this.register.getUint16(r2);
+
+        const result = registerValue1 ^ registerValue2;
+        this.setRegister('acc', result);
+        return;
+      }
+
+      // Not (invert) register;
+      case instructions.NOT: {
+        const r1 = this.fetchRegisterIndex();
+        const registerValue = this.register.getUint16(r1);
+
+        // since JS's interal VM will read our 16 bit number to a 32 bit one
+        // padded with 0 to it's left (16 0's, then our number), we need to remove them with a `and` binary operation.
+        const result = (~registerValue) & 0xFFFF;
+        this.setRegister('acc', result);
+        result;
+      }
+
       // jump if not equal
       case instructions.JMP_NOT_EQ: {
         const value = this.fetch16()

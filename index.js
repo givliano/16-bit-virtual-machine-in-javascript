@@ -2,7 +2,8 @@ const readline = require('readline');
 const createMemory = require('./create-memory');
 const CPU = require('./cpu');
 const instructions = require('./instructions');
-const { syncBuiltinESMExports } = require('module');
+const MemoryMapper = require('./memory-mapper.js');
+const createScreenDevice = require('./screen-device');
 
 // constants
 const IP = 0;
@@ -18,131 +19,45 @@ const R8 = 9;
 const SP = 10;
 const FP = 11;
 
+const MM = new MemoryMapper();
+
 const memory = createMemory(256 * 256);
+MM.map(memory, 0, 0xffff);
+
+// Map 0xFF bytes of the address space to an "output device" - just stdout
+MM.map(createScreenDevice(), 0x3000, 0x30ff, true);
+
 // create writable Uint8 array
 const writableBytes = new Uint8Array(memory.buffer);
 
-const cpu = new CPU(memory);
+const cpu = new CPU(MM);
+let i = 0;
 
-// serves as the assembly label
-const subroutineAddress = 0x3000;
-let i = 0; // incrementing pointer
+const writeCharToScreen = (char, command, position) => {
+  writableBytes[i++] = instructions.MOV_LIT_REG;
+  writableBytes[i++] = command; // high byte
+  writableBytes[i++] = char.charCodeAt(0);
+  writableBytes[i++] = R1;
 
-///////////// PROGRAM /////////////
-//
-// psh 0x3333
-// psh 0x2222
-// psh 0x1111
-//
-// mov 0x1234, r1
-// mov 0x5678, r4
-//
-// psh 0x0000
-// cal my_subroutine:
-// psh 0x4444
-//
-// SUBROUTINE
-// at address 0x3000
-// my_subroutine:
-// psh 0x0102
-// psh 0x0304
-// psh 0x0506
-//
-// mov 0x0708, r1
-// mov 0x090A, r8
-// ret
-//
-// psh 0x3333
-writableBytes[i++] = instructions.PSH_LIT;
-writableBytes[i++] = 0x33;
-writableBytes[i++] = 0x33;
+  writableBytes[i++] = instructions.MOV_REG_MEM;
+  writableBytes[i++] = R1;
+  writableBytes[i++] = 0x30; // low byte
+  writableBytes[i++] = position;
+}
 
-// psh 0x2222
-writableBytes[i++] = instructions.PSH_LIT;
-writableBytes[i++] = 0x22;
-writableBytes[i++] = 0x22;
+// "Hello World".split('').forEach((char, index) => {
+  // writeCharToScreen(char, index);
+// });
 
-// psh 0x1111
-writableBytes[i++] = instructions.PSH_LIT;
-writableBytes[i++] = 0x11;
-writableBytes[i++] = 0x11;
+writeCharToScreen(' ', 0xff, 0); // clear the screen
 
-// mov 0x1234, r1
-writableBytes[i++] = instructions.MOV_LIT_REG;
-writableBytes[i++] = 0x12;
-writableBytes[i++] = 0x34;
-writableBytes[i++] = R1;
+for (let index = 0; index <= 0xff; index++) {
+  const command = index % 2 === 0
+    ? 0x01 // in bold
+    : 0x02; //in regular
+  writeCharToScreen('*', command, index)
+}
 
-// mov 0x5678, r4
-writableBytes[i++] = instructions.MOV_LIT_REG;
-writableBytes[i++] = 0x56;
-writableBytes[i++] = 0x78;
-writableBytes[i++] = R4;
+writableBytes[i++] = instructions.HLT;
 
-// psh 0x0000
-// indicates no arguments in the subroutine
-writableBytes[i++] = instructions.PSH;
-writableBytes[i++] = 0x00
-writableBytes[i++] = 0x00
-
-// using bit shift and masks to isolate the top
-// and bottom parts of the address
-// cal my_subroutine:
-writableBytes[i++] = instructions.CAL_LIT;
-writableBytes[i++] = (subroutineAddress & 0xff00) >> 8;
-writableBytes[i++] = (subroutineAddress & 0x00ff);
-
-// psh 0x4444
-writableBytes[i++] = instructions.PSH_LIT;
-writableBytes[i++] = 0x44;
-writableBytes[i++] = 0x44;
-
-// subroutine
-i = subroutineAddress;
-
-// psh 0x0102
-writableBytes[i++] = instructions.PSH_LIT;
-writableBytes[i++] = 0x01;
-writableBytes[i++] = 0x02;
-
-// psh 0x0304
-writableBytes[i++] = instructions.PSH_LIT;
-writableBytes[i++] = 0x03;
-writableBytes[i++] = 0x04;
-
-// psh 0x0506
-writableBytes[i++] = instructions.PSH_LIT;
-writableBytes[i++] = 0x05;
-writableBytes[i++] = 0x06;
-
-// mov 0x0708, r1
-writableBytes[i++] = instructions.MOV_LIT_REG;
-writableBytes[i++] = 0x07;
-writableBytes[i++] = 0x08;
-writableBytes[i++] = R1;
-
-// mov 0x090A, r8
-writableBytes[i++] = instructions.MOV_LIT_REG;
-writableBytes[i++] = 0x09;
-writableBytes[i++] = 0x01;
-writableBytes[i++] = R8;
-
-// ret
-writableBytes[i++] = instructions.RET;
-///////// END OF PROGRAM //////////
-
-cpu.debug();
-cpu.viewMemoryAt(cpu.getRegister('ip'));
-cpu.viewMemoryAt(0xffff - 1 - 42, 44);
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
-rl.on('line', () => {
-  cpu.step();
-  cpu.debug();
-  cpu.viewMemoryAt(cpu.getRegister('ip'));
-  cpu.viewMemoryAt(0xffff - 1 - 42, 44);
-});
+cpu.run();

@@ -32,6 +32,24 @@ const NOT         = 0x34;
 // jump if not equal: compares a literal value to the accumulator register
 // and jumps to the supplied address if the values are not equal.
 const JMP_NOT_EQ  = 0x15;
+// Jump not equal comparing two registers
+const JNE_REG     = 0x40;
+// jump if equal too
+const JEQ_REG     = 0x3E;
+const JEQ_LIT     = 0x41;
+// jumpf if less than
+const JLT_REG     = 0x42;
+const JLT_LIT     = 0x43;
+// jump if greater than
+const JGT_REG     = 0x44;
+const JGT_LIT     = 0x45;
+// jump if less than or equal to
+const JLE_REG     = 0x46;
+const JLE_LIT     = 0x47;
+// jump if greater than or equal to
+const JGE_REG     = 0x48;
+const JGE_LIT     = 0x49;
+
 const PSH_LIT     = 0x17;
 const PSH_REG     = 0x18;
 const POP         = 0x1A;
@@ -68,6 +86,17 @@ module.exports = {
   MUL_LIT_REG,
   MUL_REG_REG,
   JMP_NOT_EQ,
+  JNE_REG,
+  JEQ_REG,
+  JEQ_LIT,
+  JLT_REG,
+  JLT_LIT,
+  JGT_REG,
+  JGT_LIT,
+  JLE_REG,
+  JLE_LIT,
+  JGE_REG,
+  JGE_LIT,
   PSH_LIT,
   PSH_REG,
   POP,
